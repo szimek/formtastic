@@ -634,7 +634,7 @@ module Formtastic #:nodoc:
       #
       #
       # You can customize the options available in the select by passing in a collection (an Array or
-      # Hash) through the :collection option.  If not provided, the choices are found by inferring the
+      # Hash) or a string with HTML through the :collection option.  If not provided, the choices are found by inferring the
       # parent's class name from the method name and simply calling find(:all) on it
       # (VehicleOwner.find(:all) in the example above).
       #
@@ -645,6 +645,7 @@ module Formtastic #:nodoc:
       #   f.input :author, :collection => [@justin, @kate]
       #   f.input :author, :collection => {@justin.name => @justin.id, @kate.name => @kate.id}
       #   f.input :author, :collection => ["Justin", "Kate", "Amelia", "Gus", "Meg"]
+      #   f.input :author, :collection => grouped_options_for_select(["North America",[["United States","US"],["Canada","CA"]]])
       #
       # The :label_method option allows you to customize the text label inside each option tag two ways:
       #
@@ -666,7 +667,7 @@ module Formtastic #:nodoc:
       #   f.input :author, :value_method => :login
       #   f.input :author, :value_method => Proc.new { |a| "author_#{a.login}" }
       #
-      # If the model doesn't already have a value, you can pre-select a specific option value by 
+      # If the model doesn't already have a value, you can pre-select a specific option value by
       # passing in the :default option.
       #
       # Examples:
@@ -704,18 +705,18 @@ module Formtastic #:nodoc:
           options[:default] = options[:selected]
           options.delete(:selected)
         end
-        
+
         options = set_include_blank(options)
         html_options = options.delete(:input_html) || {}
 
         reflection = self.reflection_for(method)
-        
+
         if reflection && [ :has_many, :has_and_belongs_to_many ].include?(reflection.macro)
           options[:include_blank] = false
           html_options[:multiple] ||= true
           html_options[:size] ||= 5
         end
-        
+
         # Value on the object trumps :default
         if @object && @object.respond_to?(method) && @object.send(method)
           if reflection && reflection.macro == :belongs_to
@@ -724,10 +725,10 @@ module Formtastic #:nodoc:
             options[:default] = @object.send(method)
           end
         end
-        
+
         options[:selected] = options.delete(:default)
         options[:selected] = options[:selected].first if options[:selected].present? && html_options[:multiple] == false
-        
+
         input_name = generate_association_input_name(method)
 
         select_html = if options[:group_by]
@@ -773,13 +774,13 @@ module Formtastic #:nodoc:
           options[:default] = options[:selected]
           options.delete(:selected)
         end
-        
+
         html_options = options.delete(:input_html) || {}
-        
+
         selected_value = (@object && @object.respond_to?(method) && !@object.send(method).blank?) ?
           @object.send(method) :
           options.delete(:default)
-          
+
         self.label(method, options_for_label(options)) <<
         self.time_zone_select(method, options.delete(:priority_zones),
           strip_formtastic_options(options).merge(:default => selected_value), html_options)
@@ -838,7 +839,7 @@ module Formtastic #:nodoc:
       #   f.input :author, :as => :radio, :value_method => :login
       #   f.input :author, :as => :radio, :value_method => Proc.new { |a| "author_#{a.login}" }
       #
-      # If the model doesn't already have a value, you can pre-select a default value with the 
+      # If the model doesn't already have a value, you can pre-select a default value with the
       # :default option.  Examples:
       #
       #   f.input :subscribe_to_newsletter, :as => :radio, :default => true
@@ -855,10 +856,10 @@ module Formtastic #:nodoc:
           options.delete(:selected)
           options.delete(:checked)
         end
-        
+
         collection   = find_collection_for_column(method, options)
         html_options = strip_formtastic_options(options).merge(options.delete(:input_html) || {})
-        
+
         # Value on the object trumps :default
         if @object && @object.respond_to?(method) && @object.send(method)
           reflection = self.reflection_for(method)
@@ -872,15 +873,15 @@ module Formtastic #:nodoc:
         input_name = generate_association_input_name(method)
         value_as_class = options.delete(:value_as_class)
         input_ids = []
-        
+
         list_item_content = collection.map do |c|
           label = c.is_a?(Array) ? c.first : c
           value = c.is_a?(Array) ? c.last  : c
           input_id = generate_html_id(input_name, value.to_s.gsub(/\s/, '_').gsub(/\W/, '').downcase)
           input_ids << input_id
-          
+
           html_options[:checked] = (options[:default] == value) if options[:default]
-                    
+
           li_content = template.content_tag(:label,
             "#{self.radio_button(input_name, value, html_options)} #{label}",
             :for => input_id
@@ -898,7 +899,7 @@ module Formtastic #:nodoc:
       # items (li), one for each fragment for the date (year, month, day).  Each li contains a label
       # (eg "Year") and a select box.  See date_or_datetime_input for a more detailed output example.
       #
-      # If the model doesn't already have a value, you can pre-select a default with the 
+      # If the model doesn't already have a value, you can pre-select a default with the
       # :default option. Example:
       #
       #   f.input :created_at, :as => :date, :default => 1.day.ago
@@ -915,7 +916,7 @@ module Formtastic #:nodoc:
       # contains a label (eg "Year") and a select box.  See date_or_datetime_input for a more
       # detailed output example.
       #
-      # If the model doesn't already have a value, you can pre-select a default with the 
+      # If the model doesn't already have a value, you can pre-select a default with the
       # :default option. Example:
       #
       #   f.input :created_at, :as => :datetime, :selected => 1.day.ago
@@ -931,7 +932,7 @@ module Formtastic #:nodoc:
       # items (li), one for each fragment for the time (hour, minute, second).  Each li contains a label
       # (eg "Hour") and a select box.  See date_or_datetime_input for a more detailed output example.
       #
-      # If the model doesn't already have a value, you can pre-select a default with the 
+      # If the model doesn't already have a value, you can pre-select a default with the
       # :default option. Example:
       #
       #   f.input :created_at, :as => :time, :selected => 1.hour.ago
@@ -993,7 +994,7 @@ module Formtastic #:nodoc:
           ::ActiveSupport::Deprecation.warn(":selected is deprecated (and may still have changed behavior) in #{options[:as]} inputs, use :default instead, see commit 09fc6b4 and issue #152 on github.com/justinfrench/formtastic")
           options[:default] = options[:selected]
         end
-        
+
         position = { :year => 1, :month => 2, :day => 3, :hour => 4, :minute => 5, :second => 6 }
         i18n_date_order = ::I18n.t(:order, :scope => [:date])
         i18n_date_order = nil unless i18n_date_order.is_a?(Array)
@@ -1190,7 +1191,7 @@ module Formtastic #:nodoc:
       # to the column name (method name) and can be altered with the :label option.
       # :checked_value and :unchecked_value options are also available.
       #
-      # If the model doesn't already have a value, you can specify that the checked box should 
+      # If the model doesn't already have a value, you can specify that the checked box should
       # checked by default :default option (aliased to :checked too). Examples:
       #
       #   f.input :allow_comments, :as => :boolean, :default => true
@@ -1199,12 +1200,12 @@ module Formtastic #:nodoc:
         if options.key?(:selected)
           ::ActiveSupport::Deprecation.warn(":selected is deprecated (and may still have changed behavior) in #{options[:as]} inputs, use :default or :checked instead")
         end
-        
+
         html_options = options.delete(:input_html) || {}
-        
+
         default_option_key = [:default, :checked, :selected].detect {|key| options.key?(key) }
         default = options.delete(default_option_key)
-        
+
         if @object && @object.respond_to?(method) && !@object.send(method).nil?
           html_options[:checked] = @object.send(method)
         else
@@ -1406,6 +1407,9 @@ module Formtastic #:nodoc:
       #
       def find_collection_for_column(column, options) #:nodoc:
         collection = find_raw_collection_for_column(column, options)
+
+        # Return if we have a plain string
+        return collection if collection.instance_of?(String)
 
         # Return if we have an Array of strings, fixnums or arrays
         return collection if (collection.instance_of?(Array) || collection.instance_of?(Range)) &&

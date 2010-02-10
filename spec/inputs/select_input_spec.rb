@@ -45,6 +45,21 @@ describe 'select input' do
         end
       end
     end
+
+    describe 'using a string' do
+      before do
+        @string ="<option value='0'>0</option><option value='1'>1</option>"
+        semantic_form_for(@new_post) do |builder|
+          concat(builder.input(:title, :as => :select, :collection => @string))
+        end
+      end
+
+      it 'should render select options using provided HTML string' do
+        2.times do |v|
+          output_buffer.should have_tag("form li select option[@value='#{v}']", /^#{v}$/)
+        end
+      end
+    end
   end
 
   describe 'for boolean columns' do
@@ -68,7 +83,7 @@ describe 'select input' do
         output_buffer.should have_tag("form li select option[@value='false']", /^No$/)
       end
     end
-    
+
     describe 'custom locale' do
       before do
         @boolean_select_labels = {:yes => 'Yep', :no => 'Nope'}
@@ -146,7 +161,7 @@ describe 'select input' do
       output_buffer.should have_tag('form li select#post_author_status_id')
     end
   end
-  
+
   describe "for a belongs_to association with :group_by => :author" do
     it "should call author.posts" do
       [@freds_post].each { |post| post.stub!(:to_label).and_return("Post - #{post.id}") }
@@ -168,13 +183,13 @@ describe 'select input' do
       ::Continent.stub!(:reflect_on_all_associations).and_return {|macro| mock('reflection', :klass => Author) if macro == :has_many}
       ::Continent.stub!(:reflect_on_association).and_return {|column_name| mock('reflection', :klass => Author) if column_name == :authors}
       ::Author.stub!(:reflect_on_association).and_return { |column_name| mock('reflection', :options => {}, :klass => Continent, :macro => :belongs_to) if column_name == :continent }
-      
-      
-      @continents.each_with_index do |continent, i| 
+
+
+      @continents.each_with_index do |continent, i|
         continent.stub!(:to_label).and_return(@continent_names[i])
         continent.stub!(:authors).and_return([@authors[i]])
       end
-      
+
       semantic_form_for(@new_post) do |builder|
         concat(builder.input(:author, :as => :select, :group_by => :continent ) )
         concat(builder.input(:author, :as => :select, :group_by => :continent, :group_label_method => :id ) )
@@ -185,7 +200,7 @@ describe 'select input' do
     it_should_have_input_wrapper_with_id("post_author_input")
     it_should_have_label_with_text(/Author/)
     it_should_have_label_for('post_author_id')
-    
+
     # TODO, need to find a way to repeat some of the specs and logic from the belongs_to specs without grouping
 
     0.upto(1) do |i|
@@ -201,12 +216,12 @@ describe 'select input' do
     it 'should have no duplicate groups' do
       output_buffer.should have_tag('form li select optgroup', :count => 4)
     end
-    
+
     it 'should sort the groups on the label method' do
       output_buffer.should have_tag("form li select optgroup[@label='Africa']")
       output_buffer.should have_tag("form li select optgroup[@label='99']")
     end
-    
+
     it 'should call find with :include for more optimized queries' do
       Author.should_receive(:find).with(:all, :include => :continent)
 
@@ -246,7 +261,7 @@ describe 'select input' do
         output_buffer.should have_tag("form li select option[@value='#{post.id}']", /#{post.to_label}/)
       end
     end
-    
+
     it 'should not have a blank option' do
       output_buffer.should_not have_tag("form li select option[@value='']")
     end
@@ -259,7 +274,7 @@ describe 'select input' do
         concat(builder.input(:authors, :as => :select))
       end
     end
-    
+
     it_should_have_input_wrapper_with_class("select")
     it_should_have_input_wrapper_with_id("post_authors_input")
     it_should_have_label_with_text(/Author/)
@@ -267,7 +282,7 @@ describe 'select input' do
     it_should_apply_error_logic_for_input_type(:select)
     it_should_call_find_on_association_class_when_no_collection_is_provided(:select)
     it_should_use_the_collection_when_provided(:select, 'option')
-    
+
     it 'should have a select inside the wrapper' do
       output_buffer.should have_tag('form li select')
       output_buffer.should have_tag('form li select#post_author_ids')
@@ -283,13 +298,13 @@ describe 'select input' do
         output_buffer.should have_tag("form li select option[@value='#{author.id}']", /#{author.to_label}/)
       end
     end
-    
+
     it 'should not have a blank option' do
       output_buffer.should_not have_tag("form li select option[@value='']")
     end
 
   end
-  
+
   describe 'when :prompt => "choose something" is set' do
     before do
       @new_post.stub!(:author_id).and_return(nil)
@@ -337,7 +352,7 @@ describe 'select input' do
       @some_meta_descriptions = ["One", "Two", "Three"]
       @new_post.stub!(:meta_description).any_number_of_times
     end
-  
+
     describe ":as is not set" do
       before do
         semantic_form_for(@new_post) do |builder|
@@ -347,12 +362,12 @@ describe 'select input' do
           concat(builder.input(:meta_description, :collection => @some_meta_descriptions))
         end
       end
-  
+
       it "should render a select field" do
         output_buffer.should have_tag("form li select", :count => 2)
       end
     end
-  
+
     describe ":as is set" do
       before do
         # Should not be a case, but just checking :as got highest priority in setting input type.
@@ -363,15 +378,15 @@ describe 'select input' do
           concat(builder.input(:meta_description, :as => :string, :collection => @some_meta_descriptions))
         end
       end
-      
+
       it "should render a text field" do
         output_buffer.should have_tag("form li input[@type='text']", :count => 2)
       end
     end
   end
-  
+
   describe ':default option' do
-    
+
     describe "when the object has a value" do
       it "should select the object value (ignoring :default)" do
         output_buffer.replace ''
@@ -383,12 +398,12 @@ describe 'select input' do
         output_buffer.should have_tag("form li select#post_author_id option[@value='#{@bob.id}'][@selected]", :count => 1)
       end
     end
-    
+
     describe 'when the object has no value' do
       before do
         @new_post.stub!(:author_id => nil, :author => nil)
       end
-      
+
       it "should select the :default if provided" do
         output_buffer.replace ''
         semantic_form_for(@new_post) do |builder|
@@ -397,7 +412,7 @@ describe 'select input' do
         output_buffer.should have_tag("form li select#post_author_id option[@selected]", :count => 1)
         output_buffer.should have_tag("form li select#post_author_id option[@value='#{@fred.id}'][@selected]", :count => 1)
       end
-      
+
       it "should not select an option if the :default is provided as nil" do
         output_buffer.replace ''
         semantic_form_for(@new_post) do |builder|
@@ -406,9 +421,9 @@ describe 'select input' do
         output_buffer.should_not have_tag("form li ol li select option[@selected]")
       end
     end
-    
+
   end
-  
+
   it 'should warn about :selected deprecation' do
     with_deprecation_silenced do
       ::ActiveSupport::Deprecation.should_receive(:warn)
@@ -417,5 +432,5 @@ describe 'select input' do
       end
     end
   end
-  
+
 end
